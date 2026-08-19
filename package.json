@@ -1,0 +1,12 @@
+{
+  "name": "zenso-schemas",
+  "private": true,
+  "version": "0.1.0",
+  "description": "JSON Schemas for the Zenso plugin ecosystem, published on https://schemas.zenso.ink",
+  "scripts": {
+    "validate": "node scripts/validate.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0"
+  }
+}
