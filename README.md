@@ -41,41 +41,7 @@ The schema at `public/v1/plugin-manifest.schema.json` is the **source of truth**
 
 **`plugin-manifest.schema.json`** (this repo) → **API** (`zenso-api`) zod schema + TS types → **Panel** (`zenso-panel`) form builder (`buildFields()`).
 
-### Required fields
-
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `id` | string | yes | Pattern: `owner/repo` |
-| `name` | string | yes | |
-| `schema_version` | number | yes | `1` for v1 |
-| `version` | string | yes | SemVer `X.Y.Z` |
-| `core_min` | string | yes | SemVer `X.Y.Z` |
-| `config_schema` | object | yes | See below |
-
-### Optional fields
-
-| Field | Type | Notes |
-|---|---|---|
-| `$schema` | string | URL of the schema |
-| `thumbnail` | string | Relative path |
-| `description` | string | |
-| `license` | string | |
-| `author` | object | `{ name, url? }` |
-| `capabilities` | array | Only `["script"]` supported |
-| `data_sources` | array | `{ id, type, config?, refresh_ttl? }` |
-
-### `config_schema` — config form types
-
-The panel's `buildFields()` reads each property's `type` and renders a form field. Supported types:
-
-| `type` | Renders as | Key keywords |
-|---|---|---|
-| `string` | Text input | `enum` → dropdown, `format: "uri"` → URL validation |
-| `number` | Number input | `minimum`, `maximum`, `default` |
-| `boolean` | Toggle switch | |
-| `array` | Dynamic list | `items.type` → `string\|number\|boolean` |
-
-Nested objects are not supported by the panel form builder.
+Full manifest documentation (required/optional fields, config_schema structure, data_sources, examples): [`docs/plugin-manifest.md`](docs/plugin-manifest.md)
 
 ## Local development
 
