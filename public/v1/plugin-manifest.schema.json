@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://schemas.zenso.ink/v1/plugin-manifest.schema.json",
   "title": "Zenso Plugin Manifest",
-  "description": "Declares metadata, capabilities, instance config schema and data sources for a Zenso plugin. This is the source of truth for the plugin contract — align zod and panel code to this.",
+  "description": "Source of truth for the Zenso plugin manifest contract. Mirrored by zenso-api (zod) and zenso-panel (config form builder).",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -13,19 +13,20 @@
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9]+/[a-z0-9-]+$",
-      "description": "Unique plugin identifier (owner/repo format)."
+      "description": "Unique plugin identifier in owner/repo form, e.g. \"zenso/zenso-plugin-calendar\"."
     },
     "name": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Human-readable plugin name shown in the panel."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of what the plugin does."
     },
     "thumbnail": {
       "type": "string",
       "description": "Relative path to a preview image bundled with the plugin."
-    },
-    "description": {
-      "type": "string",
-      "minLength": 1
     },
     "schema_version": {
       "const": 1,
@@ -44,96 +45,75 @@
     "license": {
       "type": "string"
     },
-    "capabilities": {
-      "type": "array",
-      "items": {
-        "enum": ["script"]
-      },
-      "uniqueItems": true,
-      "description": "Runtime capabilities the plugin needs. Only \"script\" is supported; it allows bundled .js files."
-    },
     "author": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "name": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string",
-          "format": "uri"
-        }
+        "name": { "type": "string" },
+        "url": { "type": "string", "format": "uri" }
       },
-      "required": [
-        "name"
-      ]
+      "required": ["name"]
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "enum": ["script"] },
+      "uniqueItems": true,
+      "description": "Runtime capabilities. Currently only \"script\" (allows bundled .js files)."
     },
     "config_schema": {
       "type": "object",
-      "description": "JSON Schema (draft-07) of the plugin instance configuration (configJson). Property types must be renderable by the Zenso panel: string | number | boolean | array.",
+      "description": "JSON Schema (draft-07) of the plugin instance configuration (configJson). Must declare type \"object\" and properties. Each property type must be renderable by the Zenso panel: string | number | boolean | array.",
+      "required": ["type", "properties"],
       "properties": {
-        "type": {
-          "const": "object"
-        },
+        "type": { "const": "object" },
         "properties": {
           "type": "object",
+          "description": "Map of config field name to field definition. Panel renders one form field per entry.",
           "additionalProperties": {
             "type": "object",
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
+            "additionalProperties": false,
             "properties": {
               "type": {
-                "enum": [
-                  "string",
-                  "number",
-                  "boolean",
-                  "array"
-                ]
+                "enum": ["string", "number", "boolean", "array"],
+                "description": "Field type. Rendered as text, number input, toggle, or dynamic list."
               },
-              "description": {
-                "type": "string"
+              "description": { "type": "string" },
+              "default": {
+                "description": "Pre-filled value shown in the panel form."
               },
-              "default": {},
               "format": {
-                "type": "string"
+                "type": "string",
+                "description": "Value format hint. \"uri\" is validated by the panel. Planned: date, time, datetime, email."
               },
               "enum": {
                 "type": "array",
-                "minItems": 1
+                "minItems": 1,
+                "description": "Allowed values; renders as a dropdown."
               },
-              "minimum": {
-                "type": "number"
-              },
-              "maximum": {
-                "type": "number"
-              },
+              "minimum": { "type": "number" },
+              "maximum": { "type": "number" },
               "items": {
                 "type": "object",
-                "required": [
-                  "type"
-                ],
+                "required": ["type"],
+                "additionalProperties": false,
                 "properties": {
-                  "type": {
-                    "enum": [
-                      "string",
-                      "number",
-                      "boolean"
-                    ]
-                  },
-                  "format": {
-                    "type": "string"
-                  }
-                }
+                  "type": { "enum": ["string", "number", "boolean"] },
+                  "format": { "type": "string" }
+                },
+                "description": "For arrays: the type of each list item."
               }
             }
           }
         },
         "required": {
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": { "type": "string" },
+          "description": "Config field keys that must be present in configJson."
+        },
+        "additionalProperties": {
+          "enum": [true, false],
+          "description": "Whether unknown configJson keys are allowed (default: false in JSON Schema)."
         }
       }
     },
@@ -143,37 +123,20 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "id": {
-            "type": "string",
-            "minLength": 1
-          },
+          "id": { "type": "string", "minLength": 1 },
           "type": {
             "type": "string",
             "minLength": 1,
-            "description": "Data source type handler. Currently supported: ics."
+            "description": "Data source handler. Currently supported: \"ics\"."
           },
           "config": {
-            "type": "object"
-          },
-          "refresh_ttl": {
-            "type": "number",
-            "minimum": 1,
-            "description": "Cache TTL in seconds. Server enforces a minimum of 300."
+            "type": "object",
+            "description": "Source-specific options, e.g. references to configJson field names (urls_field, days_ahead_field)."
           }
         },
-        "required": [
-          "id",
-          "type"
-        ]
+        "required": ["id", "type"]
       }
     }
   },
-  "required": [
-    "id",
-    "version",
-    "name",
-    "schema_version",
-    "core_min",
-    "config_schema"
-  ]
+  "required": ["id", "name", "schema_version", "version", "core_min", "config_schema"]
 }
