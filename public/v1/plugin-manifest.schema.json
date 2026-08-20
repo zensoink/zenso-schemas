@@ -132,11 +132,6 @@
           "config": {
             "type": "object",
             "description": "Source-specific options, e.g. references to configJson field names (urls_field, days_ahead_field)."
-          },
-          "refresh_ttl": {
-            "type": "number",
-            "minimum": 1,
-            "description": "Cache TTL in seconds. Server clamps to a minimum of 300."
           }
         },
         "required": ["id", "type"]
