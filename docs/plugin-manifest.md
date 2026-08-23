@@ -35,10 +35,10 @@ The Zenso panel reads `config_schema.properties` at runtime and renders one form
 
 | `type` | Panel renders as | Supported keywords |
 |---|---|---|
-| `string` | Text input | `enum` (dropdown), `format: "uri"` (URL validation), `default` |
+| `string` | Text input | `enum` (dropdown), `format: "uri"` (URL validation), `format: "color"` (native picker), `default` |
 | `number` | Number input | `minimum`, `maximum`, `default` |
 | `boolean` | Toggle switch | `default` |
-| `array` | Dynamic list with add/remove | `items.type` (`string`, `number`, or `boolean`), `items.format` |
+| `array` | Dynamic list with add/remove | `items.type` (`string`, `number`, `boolean`, or `object`), `items.format` |
 
 ### Config schema structure
 
@@ -57,7 +57,8 @@ The Zenso panel reads `config_schema.properties` at runtime and renders one form
       "items": { "type": "string", "format": "uri" }
     }
   },
-  "required": ["<field_name>"]
+   "required": ["<field_name>"],
+   "additionalProperties": false
 }
 ```
 
@@ -69,10 +70,11 @@ The Zenso panel reads `config_schema.properties` at runtime and renders one form
 | `description` | all | Help text shown below the input in the panel. |
 | `default` | all | Pre-filled value. Any JSON value. |
 | `enum` | `string`, `number` | Array of allowed values. Renders as a dropdown. Must have at least one item. |
-| `format` | `string` | Format hint. Currently only `"uri"` is enforced by the panel (URL validation). Future: `date`, `time`, `datetime`, `email`. |
+| `format` | `string` | Format hint. Currently `"uri"` (URL validation) and `"color"` (native color picker) are rendered by the panel. Future: `date`, `time`, `datetime`, `email`. |
 | `minimum` | `number` | Minimum allowed value. |
 | `maximum` | `number` | Maximum allowed value. |
-| `items` | `array` | Object with `type` (`string`, `number`, or `boolean`) and optional `format`. Defines the type of each list item. |
+| `items` | `array` | Defines the type of each list item. Use `type` of `string`, `number`, `boolean`, or `object`. For `object` items, supply `properties` (map of sub-field name to field definition, same shape as a top-level field) and optional `required`. `string`/`number` items may also carry `format`, `description`, `default`, `enum`, `minimum`, `maximum`. |
+| `additionalProperties` | object (top-level config) | Whether unknown `configJson` keys are allowed. One of `true`/`false` (default `false`). |
 
 ### Example: calendar plugin config
 
@@ -99,7 +101,8 @@ The Zenso panel reads `config_schema.properties` at runtime and renders one form
       "description": "Calendar layout: list (agenda), month, week, or day grid"
     }
   },
-  "required": ["calendar_feeds"]
+  "required": ["calendar_feeds"],
+  "additionalProperties": false
 }
 ```
 
@@ -107,6 +110,33 @@ This produces three form fields in the panel:
 1. `calendar_feeds` — dynamic list of URL inputs (add/remove buttons)
 2. `days_ahead` — number input with min 1, max 60, pre-filled 14
 3. `view` — dropdown with four options, pre-selected "list"
+
+### Array of objects
+
+When `items.type` is `"object"`, the panel renders a list of structured rows. Each row is defined by `properties` (same shape as a top-level field) and an optional `required` list.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "feeds": {
+      "type": "array",
+      "description": "Calendars to display",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "format": "uri" },
+          "color": { "type": "string", "format": "color" }
+        },
+        "required": ["url"]
+      }
+    }
+  },
+  "required": ["feeds"]
+}
+```
+
+This renders a dynamic list where each row has a URL input and a color picker, and every row must include a URL.
 
 ### Example: minimal config (no fields)
 
@@ -138,7 +168,6 @@ Unknown `type` values are silently skipped with a warning — no crash.
 | `id` | `string` | yes | Identifier for this source. The resolved data is injected into the template context under this key. |
 | `type` | `string` | yes | Source handler type. Currently supported: `"ics"`. |
 | `config` | `object` | no | Source-specific options. For `"ics"`: `{ "urls_field": "<configJson_key>", "days_ahead_field": "<configJson_key>" }` — references to config field names. |
-| `refresh_ttl` | `number` | no | Cache TTL in seconds. Server enforces a minimum of 300. Default: 600. |
 
 ### Example: calendar data source
 
@@ -151,14 +180,13 @@ Unknown `type` values are silently skipped with a warning — no crash.
       "config": {
         "urls_field": "calendar_feeds",
         "days_ahead_field": "days_ahead"
-      },
-      "refresh_ttl": 600
+      }
     }
   ]
 }
 ```
 
-This tells the backend: "fetch ICS feeds from `configJson.calendar_feeds`, look ahead `configJson.days_ahead` days, cache for 600 seconds, and inject the result as `context.calendar`."
+This tells the backend: "fetch ICS feeds from `configJson.calendar_feeds`, look ahead `configJson.days_ahead` days, and inject the result as `context.calendar`."
 
 ## Full manifest example
 
@@ -209,8 +237,7 @@ This tells the backend: "fetch ICS feeds from `configJson.calendar_feeds`, look 
       "config": {
         "urls_field": "calendar_feeds",
         "days_ahead_field": "days_ahead"
-      },
-      "refresh_ttl": 600
+      }
     }
   ]
 }
