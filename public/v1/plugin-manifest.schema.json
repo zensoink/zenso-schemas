@@ -169,5 +169,5 @@
       }
     }
   },
-  "required": ["id", "name", "schema_version", "version", "core_min", "config_schema"]
+  "required": ["id", "schema_version", "core_min", "config_schema"]
 }
