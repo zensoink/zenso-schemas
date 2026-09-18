@@ -158,11 +158,11 @@
           "type": {
             "type": "string",
             "minLength": 1,
-            "description": "Data source handler. Currently supported: \"ics\"."
+            "description": "Data source handler. Currently supported: \"ics\", \"image\"."
           },
           "config": {
             "type": "object",
-            "description": "Source-specific options, e.g. references to configJson field names (urls_field, days_ahead_field)."
+            "description": "Source-specific options, e.g. references to configJson field names (urls_field, days_ahead_field, url_field)."
           }
         },
         "required": ["id", "type"]

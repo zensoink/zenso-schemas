@@ -154,10 +154,10 @@ A plugin with no user-facing configuration:
 `data_sources` is an array of server-side data fetching declarations. When a plugin instance is rendered, the Zenso backend:
 
 1. Iterates each entry in `data_sources`.
-2. Looks up a handler by `type` (currently only `"ics"` is registered).
-3. Reads `configJson` values using field names from `config` (e.g. `urls_field: "calendar_feeds"` tells the handler to read `configJson.calendar_feeds`).
-4. Fetches and processes data server-side (expanding recurring events, converting timezones).
-5. Injects the result into the Liquid template context under `context[source.id]`.
+2. Looks up a handler by `type` (currently `"ics"` and `"image"` are supported).
+3. Reads `configJson` values using field names from `config` (e.g. `url_field: "url"` tells the handler to read `configJson.url`).
+4. Fetches and processes data server-side (expanding recurring events, converting binary images to base64, handling SSRF guards).
+5. Injects the result into the Liquid template context under `data[source.id]` (e.g. `data.calendar`, `data.image`).
 
 Unknown `type` values are silently skipped with a warning — no crash.
 
@@ -165,11 +165,25 @@ Unknown `type` values are silently skipped with a warning — no crash.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | `string` | yes | Identifier for this source. The resolved data is injected into the template context under this key. |
-| `type` | `string` | yes | Source handler type. Currently supported: `"ics"`. |
-| `config` | `object` | no | Source-specific options. For `"ics"`: `{ "urls_field": "<configJson_key>", "days_ahead_field": "<configJson_key>" }` — references to config field names. |
+| `id` | `string` | yes | Identifier for this source. The resolved data is injected into the template context under `data.<id>`. |
+| `type` | `string` | yes | Source handler type. Currently supported: `"ics"`, `"image"`. |
+| `config` | `object` | no | Source-specific options mapping plugin instance settings (`configJson`) to handler inputs. |
 
-### Example: calendar data source
+### Supported data source types
+
+#### 1. `ics` (Calendar feeds)
+
+Fetches remote `.ics` / iCal calendars, parses events, expands recurrence rules within a date window, and normalizes time zones.
+
+- **Config options**:
+  - `urls_field` (`string`): Name of the `configJson` field containing an array of feed URLs or feed objects (`{ url, color }`).
+  - `days_ahead_field` (`string`, optional): Name of the `configJson` field specifying the number of days ahead to fetch (default: 14, max: 60).
+- **Template output** (`data.<id>`):
+  - `events`: Array of parsed calendar event objects (`title`, `start`, `end`, `day_label`, `time_label`, `color`, etc.).
+  - `today`: Date string in target time zone (`YYYY-MM-DD`).
+  - `today_label`: Formatted human-readable date.
+  - `now_label`: Current time string.
+  - `fetched_at`: ISO timestamp.
 
 ```json
 {
@@ -186,7 +200,42 @@ Unknown `type` values are silently skipped with a warning — no crash.
 }
 ```
 
-This tells the backend: "fetch ICS feeds from `configJson.calendar_feeds`, look ahead `configJson.days_ahead` days, and inject the result as `context.calendar`."
+#### 2. `image` (Remote and LAN image assets)
+
+Safely downloads images (up to 10 MB) via guarded fetch with SSRF protection, supports local network endpoints (`http://` on private LANs for self-hosted instances like Immich, local webcams, or Home Assistant), and converts the binary image to a base64 `data:` URI for reliable offline rendering.
+
+- **Config options**:
+  - `url_field` (`string`, optional): Name of the `configJson` field containing the image URL. Defaults to `"url"` if omitted.
+- **Template output** (`data.<id>`):
+  - `src` (`string | null`): Base64 data URI (e.g. `data:image/jpeg;base64,...`) or `null` if unconfigured or fetch failed.
+  - `url` (`string | null`): The URL attempted.
+  - `empty_reason` (`string | null`): `'unconfigured'` if URL is empty, `'fetch_failed'` if download or network failed, or `null` on success.
+  - `fetched_at` (`string`): ISO timestamp.
+
+```json
+{
+  "data_sources": [
+    {
+      "id": "image",
+      "type": "image",
+      "config": {
+        "url_field": "url"
+      }
+    }
+  ]
+}
+```
+
+In the template (`index.liquid`):
+```liquid
+{% if data.image.src %}
+  <img src="{{ data.image.src }}" alt="Display Photo" />
+{% elsif data.image.empty_reason == 'fetch_failed' %}
+  <p>Unable to load image from {{ data.image.url }}</p>
+{% else %}
+  <p>No image configured.</p>
+{% endif %}
+```
 
 ## Full manifest example
 
