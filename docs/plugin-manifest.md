@@ -6,14 +6,30 @@ This document describes the manifest format for Zenso plugins. Every plugin ship
 
 ## Required fields
 
+> Schema-required (`"required"` in the JSON schema — validated on upload).
+> `name` and `version` are intentionally NOT schema-required: they are generated
+> from `package.json` at build time (the build fails fast when they are missing
+> or malformed) and enforced again by the backend validator. Every shipped
+> `manifest.json` therefore contains them; see [Built manifest](#built-manifest).
+
 | Field | Type | Description |
 |---|---|---|
 | `id` | `string` | Unique plugin identifier in `owner/repo` format. Must match `^[a-z0-9]+/[a-z0-9-]+$`. Example: `zenso/zenso-plugin-calendar`. |
-| `name` | `string` | Human-readable plugin name shown in the panel. Must not be empty. |
 | `schema_version` | `1` | Must be exactly `1` for this schema version. Matches the `v1` in the published URL. |
-| `version` | `string` | Plugin version in SemVer `X.Y.Z` format. |
 | `core_min` | `string` | Minimum Zenso core version required, in SemVer `X.Y.Z` format. |
 | `config_schema` | `object` | JSON Schema (draft-07) describing the plugin instance configuration. See [Config schema](#config-schema) below. |
+
+## Built manifest
+
+`manifest.json` is never written by hand — it is generated at build from
+`zenso.config.json` + `package.json` (see `@zenso/zenso-vite-plugin`
+`buildManifestJson`). On top of the schema-required fields above, every shipped
+manifest additionally always contains (build fail-fast + backend enforcement):
+
+| Field | Type | Source | Description |
+|---|---|---|---|
+| `name` | `string` | `package.json` | Human-readable plugin name shown in the panel. Must not be empty. |
+| `version` | `string` | `package.json` | Plugin version in SemVer `X.Y.Z` format. |
 
 ## Optional fields
 
