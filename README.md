@@ -68,3 +68,9 @@ Cloudflare Pages, connected to this repo:
 - **Custom domain:** `schemas.zenso.ink`
 
 Auto-deploys on every push to `main`. Versioned paths (`/v*/`) are cached aggressively (immutable); the root `/` catch-all revalidates every hour.
+
+## License
+
+This project is licensed under the **Apache License 2.0** — see the [LICENSE](LICENSE) file for details.
+
+The Apache 2.0 license ensures permissive public usage and schema adoption while providing an explicit patent grant that protects open interoperability standards across the Zenso ecosystem.
