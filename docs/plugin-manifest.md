@@ -23,9 +23,31 @@ This document describes the manifest format for Zenso plugins. Every plugin ship
 | `thumbnail` | `string` | Relative path to a preview image bundled with the plugin. |
 | `description` | `string` | Short description of what the plugin does. |
 | `license` | `string` | SPDX license identifier (e.g. `MIT`). |
+| `tags` | `array` | Category tags for discovery and filtering in the panel and marketplace (e.g. `["calendar", "google calendar"]`). Up to 10 tags, 1–30 characters each. Single spaces between words are allowed; no leading or trailing whitespace. |
 | `author` | `object` | Author information. If present, `author.name` (string) is required. `author.url` (string, URI) is optional. |
 | `capabilities` | `array` | Runtime capabilities the plugin needs. Only `["script"]` is currently supported — it allows bundled `.js` files in the zip. If omitted, no `.js` files are permitted. |
 | `data_sources` | `array` | Server-side data fetching declarations. See [Data sources](#data-sources) below. |
+
+## Tags
+
+`tags` is an optional array of keyword strings used for catalog indexing, discovery, and filtering in the Zenso panel and marketplace.
+
+### Formatting rules:
+- **Maximum count:** Up to 10 tags per plugin (`maxItems: 10`).
+- **Tag length:** 1 to 30 characters per tag (`minLength: 1`, `maxLength: 30`).
+- **Allowed characters:** Words with single spaces between them are supported (e.g. `"google calendar"`, `"home assistant"`, `"smart home"`, `"e-ink"`).
+- **Whitespace hygiene:** No leading or trailing whitespace, no multiple consecutive spaces, and no newlines or tabs (`pattern: ^\S+( \S+)*$`).
+- **Uniqueness:** All tags within the array must be unique (`uniqueItems: true`).
+
+```json
+{
+  "tags": [
+    "calendar",
+    "google calendar",
+    "productivity"
+  ]
+}
+```
 
 ## Config schema
 
@@ -250,6 +272,11 @@ In the template (`index.liquid`):
   "version": "0.0.2",
   "core_min": "0.0.0",
   "license": "MIT",
+  "tags": [
+    "calendar",
+    "google calendar",
+    "agenda"
+  ],
   "author": {
     "name": "Zenso",
     "url": "https://github.com/zensoink"

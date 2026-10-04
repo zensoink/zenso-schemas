@@ -45,6 +45,20 @@
     "license": {
       "type": "string"
     },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^\\S+( \\S+)*$",
+        "minLength": 1,
+        "maxLength": 30,
+        "description": "Tag string (e.g. \"calendar\", \"google calendar\", \"smart home\"). Single spaces between words allowed, no leading/trailing whitespace."
+      },
+      "minItems": 1,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "description": "Optional category tags for discovery and filtering in the panel and marketplace (max 10 tags)."
+    },
     "author": {
       "type": "object",
       "additionalProperties": false,
